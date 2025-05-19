@@ -14,8 +14,8 @@ function App() {
         <div className="relative h-full flex flex-col items-start justify-between p-8 font-mono">
           {/* Header */}
           <div className="w-full">
-            <h1 className="text-zinc-800 text-xl font-bold tracking-tight">[TON NOM]</h1>
-            <p className="text-zinc-600 tracking-wide">FRONTEND DEVELOPER</p>
+            <h1 className="text-zinc-800 text-xl font-bold tracking-tight">[THAYAPARAN SENTHOORAN]</h1>
+            <p className="text-zinc-600 tracking-wide">FULL STACK DEVELOPER</p>
             
             <div className="mt-6">
               <SocialLinks />
