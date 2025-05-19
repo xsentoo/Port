@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ExternalLink, Mail, MapPin, Phone, Github, Linkedin } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { useAudio } from '../../context/AudioContext';
 
 interface TerminalProps {
   batteryLevel: number;
-  setBatteryLevel: (level: number) => void;
+  setBatteryLevel: React.Dispatch<React.SetStateAction<number>>;
   isCharging: boolean;
 }
 
@@ -16,52 +16,101 @@ const Terminal: React.FC<TerminalProps> = ({ batteryLevel, setBatteryLevel, isCh
   const [showContent, setShowContent] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const typeText = useCallback((text: string, speed = 50) => {
-    setIsTyping(true);
-    let i = 0;
-    setTypedText('');
-    
-    const typing = setInterval(() => {
-      if (i < text.length) {
-        setTypedText(prev => prev + text.charAt(i));
-        i++;
-      } else {
-        clearInterval(typing);
-        setIsTyping(false);
-      }
-    }, speed);
+  const sectionColors: Record<Section, string> = {
+    welcome: 'text-green-400',
+    portfolio: 'text-yellow-400',
+    contact: 'text-blue-400',
+    skills: 'text-purple-400',
+    education: 'text-pink-400',
+    experience: 'text-red-400',
+    projects: 'text-cyan-400',
+  };
 
-    return () => clearInterval(typing);
-  }, []);
+  const languageColors: Record<string, string> = {
+    Java: 'text-red-500',
+    PHP: 'text-purple-600',
+    'C#': 'text-blue-600',
+    Python: 'text-yellow-400',
+    JavaScript: 'text-yellow-300',
+    HTML: 'text-orange-500',
+    CSS: 'text-blue-400',
+    React: 'text-cyan-400',
+    Angular: 'text-red-600',
+    'Node.js': 'text-green-500',
+    Express: 'text-gray-400',
+    MySQL: 'text-blue-700',
+    PostgreSQL: 'text-blue-800',
+    NoSQL: 'text-green-700',
+    Linux: 'text-gray-600',
+    Git: 'text-red-600',
+    Docker: 'text-blue-500',
+    Azure: 'text-blue-700',
+  };
+
+  const prompt = <span className="text-green-400 font-bold select-none">$ </span>;
+
+  // Typing effect
+  const typeText = useCallback(
+    (text: string, speed = 40) => {
+      setIsTyping(true);
+      let i = 0;
+      setTypedText('');
+
+      const typing = setInterval(() => {
+        if (i < text.length) {
+          setTypedText((prev) => prev + text.charAt(i));
+          i++;
+        } else {
+          clearInterval(typing);
+          setIsTyping(false);
+        }
+      }, speed);
+
+      return () => clearInterval(typing);
+    },
+    []
+  );
 
   useEffect(() => {
     if (currentSection === 'welcome') {
-      typeText('Welcome to A-013\nInitializing system...');
+      typeText('Wwelcome to A-013\nInitializing system...\n');
       const timer = setTimeout(() => {
-        setCurrentSection('portfolio');
+        setShowContent(true);
         playSound('startup');
-      }, 3000);
+        setCurrentSection('portfolio');
+      }, 3500);
       return () => clearTimeout(timer);
+    } else {
+      setShowContent(true);
+      setTypedText('');
     }
   }, [currentSection, playSound, typeText]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isCharging) {
-        setBatteryLevel(prev => Math.max(0, prev - 1));
+        setBatteryLevel((prev) => Math.max(0, prev - 1));
       } else {
-        setBatteryLevel(prev => Math.min(100, prev + 2));
+        setBatteryLevel((prev) => Math.min(100, prev + 2));
       }
-    }, 1000);
+    }, 1500);
 
     return () => clearInterval(timer);
   }, [isCharging, setBatteryLevel]);
 
+  // Scroll to bottom when content changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [typedText, showContent]);
+
   const handleNavigation = (direction: 'prev' | 'next') => {
     const sections: Section[] = ['portfolio', 'contact', 'skills', 'education', 'experience', 'projects'];
     const currentIndex = sections.indexOf(currentSection);
-    
+
     let nextIndex;
     if (direction === 'prev') {
       nextIndex = currentIndex <= 0 ? sections.length - 1 : currentIndex - 1;
@@ -77,57 +126,29 @@ const Terminal: React.FC<TerminalProps> = ({ batteryLevel, setBatteryLevel, isCh
     }, 300);
   };
 
-  const ProjectCard = ({ title, period, team, description, tech, github }: any) => (
-    <div className="border border-green-500/30 rounded-lg p-4 hover:border-green-500/60 transition-all duration-300">
-      <h3 className="text-yellow-500 text-lg">{title}</h3>
-      <p className="text-gray-400">{period} | {team}</p>
-      <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
-        {description.map((desc: string, i: number) => (
-          <li key={i} className="animate-fadeIn" style={{ animationDelay: `${i * 100}ms` }}>{desc}</li>
-        ))}
-      </ul>
-      <div className="mt-2">
-        <span className="text-yellow-500/70">Technologies:</span>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {tech.map((t: string, i: number) => (
-            <span 
-              key={i}
-              className="px-2 py-1 bg-green-500/10 rounded text-green-400 text-xs animate-fadeIn"
-              style={{ animationDelay: `${i * 100}ms` }}
-            >
-              {t}
-            </span>
-          ))}
-        </div>
-      </div>
-      {github && (
-        <a 
-          href={github}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 mt-3 text-blue-400 hover:text-blue-300 transition-colors"
-        >
-          <Github size={14} />
-          View on GitHub
-          <ExternalLink size={12} />
-        </a>
-      )}
-    </div>
-  );
+  const colorLang = (langs: string[]) =>
+    langs.map((lang, i) => (
+      <span key={i} className={languageColors[lang] || 'text-green-300'}>
+        {lang}
+        {i !== langs.length - 1 ? ', ' : ''}
+      </span>
+    ));
 
   const renderContent = () => {
     switch (currentSection) {
       case 'welcome':
         return (
-          <div className="text-center">
-            <pre className="whitespace-pre-wrap">{typedText}</pre>
-          </div>
+          <pre className={`whitespace-pre-wrap font-mono text-green-400 leading-relaxed`}>
+            {typedText}
+            <span className={`blinking-cursor`}>█</span>
+          </pre>
         );
+
       case 'portfolio':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl text-center mb-6 animate-fadeIn">Portfolio Navigation</h2>
-            <div className="space-y-2">
+          <>
+            <p className="font-mono text-yellow-400 mb-3">{prompt}Select a section below:</p>
+            <div className="flex flex-col space-y-2">
               {['Contact', 'Skills', 'Education', 'Experience', 'Projects'].map((item, index) => (
                 <button
                   key={item}
@@ -135,276 +156,290 @@ const Terminal: React.FC<TerminalProps> = ({ batteryLevel, setBatteryLevel, isCh
                     setCurrentSection(item.toLowerCase() as Section);
                     playSound('click');
                   }}
-                  className="w-full p-2 border border-green-500 rounded hover:bg-green-500/20 transition-all text-left animate-slideIn"
+                  className="text-yellow-300 font-mono text-left px-3 py-1 rounded hover:bg-yellow-700/30 transition duration-200 border border-yellow-600"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  &gt; {item}
+                  {prompt} {item}
                 </button>
               ))}
             </div>
-          </div>
+          </>
         );
+
       case 'contact':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl mb-4 animate-fadeIn">Contact Information</h2>
-            <div className="space-y-3">
-              {[
-                { icon: <Mail size={16} />, text: 'senthooran.thayaparan.pro@gmail.com' },
-                { icon: <Phone size={16} />, text: '07 82 18 26 57' },
-                { icon: <MapPin size={16} />, text: 'Noisy-le-Grand' },
-                { 
-                  icon: <Github size={16} />, 
-                  text: 'github.com/xsentoo',
-                  link: 'https://github.com/xsentoo'
-                },
-                { 
-                  icon: <Linkedin size={16} />, 
-                  text: 'senthooran-thayaparan',
-                  link: 'https://linkedin.com/in/senthooran-thayaparan'
-                }
-              ].map((item, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-2 animate-slideIn"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <span className="text-yellow-500">{item.icon}</span>
-                  {item.link ? (
-                    <a href={item.link} className="text-green-400 hover:underline">{item.text}</a>
-                  ) : (
-                    <span>{item.text}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <>
+            <p className={`font-mono mb-2 ${sectionColors['contact']}`}>{prompt}Contact Details:</p>
+            <p className="font-mono text-blue-400 pl-4">Name: Thayaparan Senthooran</p>
+            <p className="font-mono text-blue-400 pl-4">Location: Noisy-le-Grand</p>
+            <p className="font-mono text-blue-400 pl-4">
+              Email:{' '}
+              <a
+                href="mailto:senthooran.thayaparan.pro@gmail.com"
+                className="underline hover:text-blue-600 transition"
+              >
+                senthooran.thayaparan.pro@gmail.com
+              </a>
+            </p>
+            <p className="font-mono text-blue-400 pl-4">Phone: 07 82 18 26 57</p>
+            <p className="font-mono text-blue-400 pl-4">
+              GitHub:{' '}
+              <a
+                href="https://github.com/xsentoo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-600 transition"
+              >
+                github.com/xsentoo
+              </a>
+            </p>
+            <p className="font-mono text-blue-400 pl-4">
+              LinkedIn:{' '}
+              <a
+                href="https://linkedin.com/in/senthooran-thayaparan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-blue-600 transition"
+              >
+                senthooran-thayaparan
+              </a>
+            </p>
+          </>
         );
+
       case 'skills':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl mb-4 animate-fadeIn">Technical Skills</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { title: 'Languages', skills: ['Java', 'PHP', 'C#', 'Python', 'JavaScript', 'HTML', 'CSS'] },
-                { title: 'Frontend', skills: ['HTML', 'CSS', 'React', 'Angular'] },
-                { title: 'Backend', skills: ['Node.js', 'Java', 'PHP', 'C#', 'Python', 'Express', 'API REST'] },
-                { title: 'Databases', skills: ['MySQL', 'PostgreSQL', 'NoSQL'] },
-                { title: 'Tools', skills: ['Linux', 'Git', 'Docker', 'Microsoft Azure'] },
-                { title: 'Methods', skills: ['Agile', 'Code Review', 'Documentation'] },
-                { title: 'Soft Skills', skills: ['Autonomy', 'Problem Solving', 'Team Work'] }
-              ].map((category, index) => (
-                <div 
-                  key={category.title}
-                  className="border border-green-500/30 rounded p-3 animate-fadeIn"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <h3 className="text-yellow-500 mb-2">{category.title}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {category.skills.map((skill, i) => (
-                      <span 
-                        key={i}
-                        className="px-2 py-1 bg-green-500/10 rounded text-green-400 text-xs"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <>
+            <p className={`font-mono mb-3 ${sectionColors['skills']}`}>{prompt}Skills Overview:</p>
+            <ul className="font-mono list-disc pl-8 space-y-1">
+              <li>
+                <strong>Languages:</strong> {colorLang(['Java', 'PHP', 'C#', 'Python', 'JavaScript', 'HTML', 'CSS'])}
+              </li>
+              <li>
+                <strong>Frontend:</strong> {colorLang(['HTML', 'CSS', 'React', 'Angular'])}
+              </li>
+              <li>
+                <strong>Backend:</strong> {colorLang(['Node.js', 'Java', 'PHP', 'C#', 'Python', 'Express', 'API REST'])}
+              </li>
+              <li>
+                <strong>Databases:</strong> {colorLang(['MySQL', 'PostgreSQL', 'NoSQL'])}
+              </li>
+              <li>
+                <strong>Tools:</strong> {colorLang(['Linux', 'Git', 'Docker', 'Azure'])}
+              </li>
+              <li>
+                <strong>Methods:</strong> <span className="text-purple-300">Agile, Code Review, Documentation</span>
+              </li>
+              <li>
+                <strong>Soft Skills:</strong>{' '}
+                <span className="text-purple-300">Autonomy, Problem Solving, Teamwork</span>
+              </li>
+            </ul>
+          </>
         );
+
       case 'education':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl mb-4 animate-fadeIn">Education</h2>
-            <div className="space-y-4">
-              {[
-                {
-                  school: 'Master Dev Manager Full Stack, EFREI',
-                  period: '2025 - 2027'
-                },
-                {
-                  school: 'Bachelor 3 Développement Informatique, YNOV PARIS',
-                  period: '2024 - 2025'
-                },
-                {
-                  school: 'BTS SIO SLAM, LYCÉE RENÉ DESCARTES',
-                  period: '2022 - 2024',
-                  location: 'Champs Sur Marne'
-                }
-              ].map((edu, index) => (
-                <div 
-                  key={index}
-                  className="border border-green-500/30 p-4 rounded animate-slideIn"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <h3 className="text-yellow-500">{edu.school}</h3>
-                  <p className="text-gray-400">{edu.period}</p>
-                  {edu.location && <p className="text-gray-400">{edu.location}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
+          <>
+            <p className={`font-mono mb-3 ${sectionColors['education']}`}>{prompt}Education Background:</p>
+            <ul className="font-mono list-disc pl-8 space-y-2 text-pink-300">
+              <li>
+                <strong>Master Dev Manager Full Stack</strong>, EFREI — 2025 – 2027
+              </li>
+              <li>
+                <strong>Bachelor 3 Développement Informatique</strong>, YNOV PARIS — 2024 – 2025
+              </li>
+              <li>
+                <strong>BTS SIO SLAM</strong>, LYCÉE RENÉ DESCARTES Champs Sur Marne — 2022 – 2024
+              </li>
+            </ul>
+          </>
         );
+
       case 'experience':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl mb-4 animate-fadeIn">Work Experience</h2>
-            <div className="space-y-6">
-              {[
-                {
-                  company: 'Film by Janar',
-                  position: 'Freelance',
-                  period: 'January 2025 - Present',
-                  details: [
-                    'Development of a platform for users to discover company creations',
-                    'Implementation of automated notification system for reservations',
-                    'Technologies: HTML, CSS, JavaScript (React), Node.js (Express), Firebase'
-                  ]
-                },
-                {
-                  company: 'ÖPM',
-                  position: 'Athis-Mons',
-                  period: 'January 2024 - March 2024',
-                  details: [
-                    'Design and development of an e-commerce website',
-                    'Technologies: HTML, CSS, JavaScript and PHP',
-                    'Created user-friendly interface to enhance customer experience',
-                    'Development of key features like shopping cart and course list download'
-                  ]
-                }
-              ].map((exp, index) => (
-                <div 
-                  key={index}
-                  className="border border-green-500/30 p-4 rounded animate-slideIn"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <h3 className="text-yellow-500">{exp.company}</h3>
-                  <p className="text-gray-400">{exp.position} | {exp.period}</p>
-                  <ul className="list-disc list-inside mt-2 space-y-1 text-gray-300">
-                    {exp.details.map((detail, i) => (
-                      <li key={i} className="animate-fadeIn" style={{ animationDelay: `${i * 100}ms` }}>
-                        {detail}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+          <>
+            <p className={`font-mono mb-3 ${sectionColors['experience']}`}>{prompt}Professional Experience:</p>
+            <div className="space-y-5 text-red-400 font-mono pl-6">
+              <div>
+                <h3 className="font-semibold text-red-300">Film by Janar (Freelance)</h3>
+                <p>Jan 2025 – Present</p>
+                <ul className="list-disc pl-6">
+                  <li>
+                    Developed a platform to discover creations, book services and contact the team.
+                  </li>
+                  <li>Booking management with automated notifications.</li>
+                  <li>Technologies: HTML, CSS, JavaScript (React), Node.js (Express), Firebase.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-red-300">ÖPM, Athis-Mons</h3>
+                <p>Jan 2024 – Mar 2024</p>
+                <ul className="list-disc pl-6">
+                  <li>Evolutionary maintenance of an internal C# application.</li>
+                  <li>Contributed to new feature development.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-red-300">Studio Cheeky, Paris</h3>
+                <p>Dec 2023 – Jan 2024</p>
+                <ul className="list-disc pl-6">
+                  <li>Designed and developed a React app for order tracking.</li>
+                </ul>
+              </div>
             </div>
-          </div>
+          </>
         );
+
       case 'projects':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl mb-4 animate-fadeIn">Projects</h2>
-            <div className="space-y-6">
-              <ProjectCard
-                title="FitnessAnim"
-                period="October 2024 - 2025"
-                team="Team of 4"
-                description={[
-                  'Gamified mobile app for fitness training',
-                  'Performance tracking system with personalized challenges'
-                ]}
-                tech={['React Native', 'Node.js', 'Express.js', 'Android Studio']}
-                github="https://github.com/xsentoo/fitnessanim"
-              />
-              <ProjectCard
-                title="VOTE MY MUSIC"
-                period="2024 - 2025"
-                team="Personal Project"
-                description={[
-                  'Platform for users to vote on favorite music',
-                  'Feature to add and receive feedback on songs'
-                ]}
-                tech={['C#', 'Figma']}
-                github="https://github.com/xsentoo/vote-my-music"
-              />
-              <ProjectCard
-                title="WEELSONG6"
-                period="August 2024 - 2026"
-                team="Team of 3"
-                description={[
-                  'Web platform for Route 66 enthusiasts',
-                  'Budget calculator and social network features',
-                  'Interactive map showing points of interest'
-                ]}
-                tech={['React', 'Node.js', 'PostgreSQL', 'Google Maps API', 'OpenWeatherMap']}
-                github="https://github.com/xsentoo/weelsong6"
-              />
-            </div>
-          </div>
+          <>
+            <p className={`font-mono mb-3 ${sectionColors['projects']}`}>{prompt}Projects Overview:</p>
+            <ul className="font-mono list-disc pl-8 space-y-3 text-cyan-300">
+              <li>
+                <strong>Gamified Fitness App</strong> — Mobile app where users create avatars that evolve with
+                physical performance.
+              </li>
+              <li>
+                <strong>React Portfolio</strong> — Personal portfolio site built with React featuring smooth animations.
+              </li>
+              <li>
+                <strong>CI/CD Pipelines</strong> — Setup continuous integration pipelines with GitLab CI/CD and Jenkins.
+              </li>
+            </ul>
+          </>
         );
+
       default:
         return null;
     }
   };
 
-  if (batteryLevel === 0) {
-    return (
-      <div className="h-full flex items-center justify-center text-red-500 animate-pulse">
-        BATTERY DEPLETED - PLEASE CONNECT CHARGER
-      </div>
-    );
-  }
+  // Get current time for status bar
+  const [currentTime, setCurrentTime] = useState(new Date());
+  useEffect(() => {
+    const clock = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(clock);
+  }, []);
 
   return (
-    <div className="relative h-full bg-black text-green-500 p-6 font-mono text-sm">
-      <div className="h-full flex flex-col">
-        <div className="flex-grow overflow-auto custom-scrollbar">
-          <div className={`transition-all duration-300 ${showContent ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-4'}`}>
-            {renderContent()}
-          </div>
+    <div
+      className="relative flex flex-col h-full w-full max-w-4xl mx-auto rounded-lg bg-black overflow-hidden"
+      style={{
+        fontFamily: "'Share Tech Mono', monospace",
+        letterSpacing: '0.08em',
+      }}
+    >
+      {/* Scanline Animation Overlay */}
+      <div className="pointer-events-none absolute inset-0 bg-[url('/scanline.png')] opacity-10 animate-scanline" />
+
+      {/* Header with buttons and nav */}
+      <div className="flex items-center justify-between p-4 border-b border-green-600 bg-black/80 select-none">
+        <div className="flex items-center space-x-3">
+          {currentSection !== 'welcome' && (
+            <button
+              onClick={() => {
+                setCurrentSection('welcome');
+                setShowContent(false);
+                playSound('click');
+                setTimeout(() => setShowContent(true), 300);
+              }}
+              className="text-green-400 hover:text-green-600 font-mono px-4 py-1 border border-green-400 rounded transition duration-200 shadow-[0_0_5px_rgba(0,255,0,0.7)]"
+              aria-label="Back to Main"
+            >
+              &larr; Back to Main
+            </button>
+          )}
+
+          {currentSection !== 'welcome' && (
+            <>
+              <button
+                onClick={() => handleNavigation('prev')}
+                className="p-2 hover:text-yellow-400 transition duration-200"
+                aria-label="Précédent"
+              >
+                <ChevronDown className="rotate-90" size={24} />
+              </button>
+              <button
+                onClick={() => handleNavigation('next')}
+                className="p-2 hover:text-yellow-400 transition duration-200"
+                aria-label="Suivant"
+              >
+                <ChevronDown className="-rotate-90" size={24} />
+              </button>
+            </>
+          )}
         </div>
 
-        {currentSection !== 'welcome' && (
-          <div className="mt-4 flex items-center justify-between border-t border-green-500/20 pt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-32 h-4 bg-black border border-green-500 rounded-sm overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-200 ${
-                    isCharging ? 'animate-pulse bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${batteryLevel}%` }}
-                ></div>
-              </div>
-              <span className="text-xs">
-                {batteryLevel}% {isCharging && '⚡'}
-              </span>
+        {/* Status Bar */}
+        <div className="flex -center space-x-4 font-mono text-green-400 text-sm select-none">
+          <div className="flex items-center space-x-1">
+            <span>Batterie:</span>
+            <div className="w-24 h-4 border border-green-400 rounded overflow-hidden relative bg-black">
+              <div
+                className={`h-full bg-green-500 transition-all duration-500`}
+                style={{ width: `${batteryLevel}%` }}
+              />
+              {isCharging && (
+                <div className="absolute inset-0 flex justify-center items-center text-green-300 font-bold animate-pulse">
+                  ⚡
+                </div>
+              )}
             </div>
-
-            {currentSection !== 'portfolio' && (
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => handleNavigation('prev')}
-                  className="w-8 h-8 border border-green-500 rounded flex items-center justify-center hover:bg-green-500/20 transition-colors"
-                >
-                  <ChevronDown className="rotate-180" size={16} />
-                </button>
-                <button 
-                  onClick={() => handleNavigation('next')}
-                  className="w-8 h-8 border border-green-500 rounded flex items-center justify-center hover:bg-green-500/20 transition-colors"
-                >
-                  <ChevronDown size={16} />
-                </button>
-                <button 
-                  onClick={() => {
-                    setCurrentSection('portfolio');
-                    playSound('click');
-                  }}
-                  className="px-4 py-1 border border-green-500 rounded hover:bg-green-500/20 transition-colors ml-2"
-                >
-                  Back to Menu
-                </button>
-              </div>
-            )}
+            <span>{batteryLevel}%</span>
           </div>
-        )}
+          
+        </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-scanlines opacity-50"></div>
+      {/* Content Area */}
+      <div
+        ref={scrollRef}
+        className="flex-1 p-6 overflow-y-auto bg-black bg-opacity-80 text-green-300 text-sm leading-relaxed font-mono
+        scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-black"
+        style={{ minHeight: 320 }}
+      >
+        {showContent ? renderContent() : <p className="text-center text-gray-600">Chargement...</p>}
+      </div>
+
+      {/* Footer prompt */}
+      <div className="flex items-center p-4 border-t border-green-600 bg-black/90 font-mono text-green-400 select-none">
+        {prompt}
+        <span className={`blinking-cursor ml-1`}>█</span>
+      </div>
+
+      {/* Styles */}
+      <style>{`
+        .blinking-cursor {
+          animation: blink 1.2s step-start infinite;
+        }
+        @keyframes blink {
+          0%, 50% {
+            opacity: 1;
+          }
+          50.1%, 100% {
+            opacity: 0;
+          }
+        }
+        @keyframes scanline {
+          0% {
+            background-position: 0 0;
+          }
+          100% {
+            background-position: 0 100%;
+          }
+        }
+        .animate-scanline {
+          animation: scanline 7s linear infinite;
+        }
+        .shadow-neon {
+          box-shadow:
+            0 0 10px #0f0,
+            0 0 20px #0f0,
+            0 0 40px #0f0,
+            inset 0 0 5px #0f0;
+        }
+      `}</style>
     </div>
   );
 };

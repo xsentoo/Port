@@ -4,9 +4,10 @@ import { useAudio } from '../../context/AudioContext';
 interface KeyboardProps {
   isPoweredOn: boolean;
   onKeyPress: (key: string) => void;
+  onPowerToggle: () => void; // ✅ Ajouté
 }
 
-const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress }) => {
+const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress, onPowerToggle }) => {
   const { playSound } = useAudio();
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
@@ -26,7 +27,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress }) => {
       if (e.key === 'Enter') key = 'ENTER';
       if (e.key === 'Backspace') key = 'DELETE';
       if (e.key === ' ') key = 'SPACE';
-      
+
       setPressedKey(key);
       onKeyPress(key);
     };
@@ -46,7 +47,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress }) => {
 
   const handleVirtualKeyPress = (key: string) => {
     if (!isPoweredOn) return;
-    
+
     setPressedKey(key);
     onKeyPress(key);
     setTimeout(() => setPressedKey(null), 100);
@@ -54,6 +55,16 @@ const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress }) => {
 
   return (
     <div className="p-4 space-y-1">
+      {/* ✅ Bouton Power en haut */}
+      <div className="flex justify-center mb-2">
+        <button
+          onClick={onPowerToggle}
+          className="w-24 h-8 bg-red-600 hover:bg-red-500 text-white text-[10px] rounded font-bold transition-all"
+        >
+          POWER
+        </button>
+      </div>
+
       {keyRows.map((row, rowIndex) => (
         <div key={rowIndex} className="flex justify-center gap-1">
           {row.map((key) => {
