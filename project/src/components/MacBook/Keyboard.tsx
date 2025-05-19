@@ -57,12 +57,7 @@ const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress, onPowerTog
     <div className="p-4 space-y-1">
       {/* ✅ Bouton Power en haut */}
       <div className="flex justify-center mb-2">
-        <button
-          onClick={onPowerToggle}
-          className="w-24 h-8 bg-red-600 hover:bg-red-500 text-white text-[10px] rounded font-bold transition-all"
-        >
-          POWER
-        </button>
+        
       </div>
 
       {keyRows.map((row, rowIndex) => (
