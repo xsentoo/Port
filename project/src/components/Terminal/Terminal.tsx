@@ -425,21 +425,7 @@ case 'projects':
       {/* Header with buttons and nav */}
       <div className="flex items-center justify-between p-4 border-b border-green-600 bg-black/80 select-none">
         <div className="flex items-center space-x-3">
-          {currentSection !== 'welcome' && (
-            <button
-              onClick={() => {
-                setCurrentSection('welcome');
-                setShowContent(false);
-                playSound('click');
-                setTimeout(() => setShowContent(true), 300);
-              }}
-              className="text-green-400 hover:text-green-600 font-mono px-4 py-1 border border-green-400 rounded transition duration-200 shadow-[0_0_5px_rgba(0,255,0,0.7)]"
-              aria-label="Back to Main"
-            >
-              &larr; Back to Main
-            </button>
-          )}
-
+          
           {currentSection !== 'welcome' && (
             <>
               <button
