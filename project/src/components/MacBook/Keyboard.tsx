@@ -8,7 +8,7 @@ interface KeyboardProps {
 }
 
 const Keyboard: React.FC<KeyboardProps> = ({ isPoweredOn, onKeyPress, onPowerToggle }) => {
-  const { playSound } = useAudio();
+  useAudio();
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   const keyRows = [
